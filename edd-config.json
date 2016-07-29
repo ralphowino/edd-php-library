@@ -1,6 +1,5 @@
 {
   "name": "PHP",
-  "default-version": "master",
   "slug": "php",
   "dependencies": {
     "ralphowino/edd-base-library": "master"
