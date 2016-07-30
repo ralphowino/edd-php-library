@@ -1,0 +1,127 @@
+description: an ordinary class file
+
+uses: php:file
+
+type: pattern
+
+variables:
+  schema:
+    type: object
+    properties:
+      namespace:
+        type: string
+      class_name:
+        type: string
+        required: true
+      extends:
+        type: string
+      implements:
+        type: array
+        properties:
+          interface_name:
+            type: string
+            required: true
+      imports:
+        type: array
+        properties:
+          import_name:
+            type: string
+            required: true
+      methods:
+        type : array
+        properties:
+          method_name:
+            type: string
+            required: true
+          method_scope:
+            type: string
+            enum:
+              - title: public
+                value: public
+              - protected
+              - private
+          method_abstract:
+            type: boolean
+            default: false
+          method_static:
+            type: boolean
+            default: false
+          method_final:
+            type: boolean
+            default: false
+          method_body:
+            type: string
+            format: code
+            default: '//Todo: implement function {{class_name}}:{{method_name}}'
+          method_type:
+            type: string
+          method_parameters:
+            type: array
+            properties:
+              param_type:
+                type: string
+              param_name:
+                type: string
+                required: true
+              param_value:
+                type: string
+      properties:
+        type : array
+        properties:
+          property_type:
+           type: string
+          property_name:
+           type: string
+           required: true
+          property_scope:
+           type: string
+           required: true
+           enum:
+            - public
+            - private
+            - protected
+      traits:
+          type: array
+          properties:
+            trait_name:
+              type: string
+              required: true
+    required:
+      - class_name
+  form:
+   - *
+
+definitions:
+  file_name: '{{ class_name }}'
+  php_code: |
+    {% if namespace %}namespace {{ namespace }};{% endif %}
+
+    {% if imports  %}
+
+    {% for import in imports %}
+    use {{ import.import_name }};
+    {% endfor %}
+    {% endif %}
+
+    {% if methods%}{% if methods  | array_pluck('method_abstract') | array_filter | length %}abstract {% endif %}{% endif %}class {{ class_name }}{% if extends %} extends {{ extends }}{% endif %}{% if implements %} implements {% for interface in implements %}{{ interface.interface_name }}{% if not loop.last %}, {% endif %}{% endfor %} {% endif %}
+
+    {
+      {% if traits %}
+      use {% for trait in traits %}{{ trait.trait_name }}{% if not loop.last %}, {% endif %}{% endfor %};
+      {% endif %}
+
+      {% for property in properties %}
+      {{ property.property_scope }} ${{ property.property_name }};
+      {% endfor %}
+
+      {% for method in methods %}
+      {% if method.method_abstract %}abstract {% endif %}{% if method.method_scope %}{{method.method_scope}} {% endif %}{% if method.method_final %}final {% endif %}{% if method.method_static %}static {% endif %}function {{method.method_name}}({% for parameter in method.method_parameters %}{% if parameter.param_type %}{{parameter.param_type}} {% endif %}${{parameter.param_name}}{% if parameter.param_value %} = {{parameter.param_value}}{% endif %}{% if not loop.last %}, {% endif %}{% endfor %}){% if method.method_type %} :{{method.method_type}}{% endif %}{% if method.method_abstract %};{% else %}
+
+        {
+            {{method.method_body | evaluate}}
+        }
+      {% endif %}
+
+      {% endfor %}
+
+    }

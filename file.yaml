@@ -1,0 +1,19 @@
+descriptions : a php file
+
+uses: base:file
+
+type: pattern
+
+variables:
+  schema:
+    type: object
+    properties:
+      php_code:
+        type: string
+  form:
+     - *
+
+definitions:
+  file_name_suffix: '.php'
+  file_content: |
+      <?php {{php_code}}
