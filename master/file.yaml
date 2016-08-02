@@ -10,10 +10,12 @@ variables:
     properties:
       php_code:
         type: string
+    required:
+      - php_code
   form:
-     - *
+     - "*"
 
 definitions:
   file_name_suffix: '.php'
   file_content: |
-      <?php {{php_code}}
+      <?php {{php_code | safe}}

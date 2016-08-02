@@ -1,0 +1,61 @@
+uses: 'base:text'
+
+variables:
+  scope:
+    type: object
+    properties:
+      method_name:
+        type: string
+      method_scope:
+        type: string
+        default: protected
+        enum:
+          -
+            name: public
+            value: public
+          -
+            name: protected
+            value: protected
+          -
+            name: private
+            value: private
+      method_abstract:
+        type: boolean
+        default: false
+      method_static:
+        type: boolean
+        default: false
+      method_final:
+        type: boolean
+        default: false
+      method_body:
+        type: string
+        format: code
+        default: '// TODO: Implement {{method_name}}() method.'
+      method_type:
+        type: string
+      method_parameters:
+        type: array
+        properties:
+          param_type:
+            type: string
+          param_name:
+            type: string
+            required: true
+          param_value:
+            type: string
+    required:
+      - method_nmae
+      - method_scope
+  form:
+    - '*'
+
+definitions:
+  text_content: |
+      {% if method_abstract %}abstract {% endif %}{% if method_scope %}{{method_scope}} {% endif %}{% if method_final %}final {% endif %}{% if method_static %}static {% endif %}function {{method_name}}({% for parameter in method_parameters %}{% if parameter.param_type %}{{parameter.param_type}} {% endif %}${{parameter.param_name}}{% if parameter.param_value %} = {{parameter.param_value}}{% endif %}{% if not loop.last %}, {% endif %}{% endfor %}){% if method_type %} :{{method_type}}{% endif %}{% if method_abstract %};{% else %}
+
+        {
+            {%spaceless%}{{method_body}}{%endspaceless%}
+
+        }
+      {% endif %}

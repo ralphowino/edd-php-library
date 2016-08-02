@@ -12,7 +12,6 @@ variables:
         type: string
       class_name:
         type: string
-        required: true
       extends:
         type: string
       implements:
@@ -89,39 +88,47 @@ variables:
     required:
       - class_name
   form:
-   - *
+   - "*"
 
 definitions:
-  file_name: '{{ class_name }}'
-  php_code: |
-    {% if namespace %}namespace {{ namespace }};{% endif %}
+    file_name: '{{ class_name }}'
+    php_code: |
+      {% if namespace %}namespace {{ namespace }};{% endif %}
+      {% if imports  %}
 
-    {% if imports  %}
 
-    {% for import in imports %}
-    use {{ import.import_name }};
-    {% endfor %}
-    {% endif %}
-
-    {% if methods%}{% if methods  | array_pluck('method_abstract') | array_filter | length %}abstract {% endif %}{% endif %}class {{ class_name }}{% if extends %} extends {{ extends }}{% endif %}{% if implements %} implements {% for interface in implements %}{{ interface.interface_name }}{% if not loop.last %}, {% endif %}{% endfor %} {% endif %}
-
-    {
-      {% if traits %}
-      use {% for trait in traits %}{{ trait.trait_name }}{% if not loop.last %}, {% endif %}{% endfor %};
+      {% for import in imports %}
+      use {{ import.import_name }};
+      {% endfor %}
       {% endif %}
 
-      {% for property in properties %}
-      {{ property.property_scope }} ${{ property.property_name }};
-      {% endfor %}
+      {% if methods %}{% if methods  | array_pluck('method_abstract') | array_filter | length %}abstract {% endif %}{% endif %}class {{ class_name }}{% if extends %} extends {{ extends }}{% endif %}{% if implements %} implements {% for interface in implements %}{{ interface.interface_name }}{% if not loop.last %}, {% endif %}{% endfor %} {% endif %}
 
-      {% for method in methods %}
-      {% if method.method_abstract %}abstract {% endif %}{% if method.method_scope %}{{method.method_scope}} {% endif %}{% if method.method_final %}final {% endif %}{% if method.method_static %}static {% endif %}function {{method.method_name}}({% for parameter in method.method_parameters %}{% if parameter.param_type %}{{parameter.param_type}} {% endif %}${{parameter.param_name}}{% if parameter.param_value %} = {{parameter.param_value}}{% endif %}{% if not loop.last %}, {% endif %}{% endfor %}){% if method.method_type %} :{{method.method_type}}{% endif %}{% if method.method_abstract %};{% else %}
+      {
+        {% if traits|length %}
+        {% for trait in traits %}{% if loop.first %}use {% endif %}{{ trait.trait_name }}{% if not loop.last %}, {% endif %}{% if loop.last %}; {% endif %}{% endfor %}
 
-        {
-            {{method.method_body | evaluate}}
-        }
-      {% endif %}
+        {% endif %}
+        {% import _self as class %}
+        {% macro print_var(value) %}
+          {% if value is iterable %}[{% for val in value %}{{_self.print_var(val)}}{%if loop.last %}{% else %},{%endif%}{% endfor %}]{% else %}{{value}}{% endif %}
+        {% endmacro %}
+        {% if properties %}
+        {% for property in properties %}
+        {{ property.property_scope }} {{property.property_scope  != 'const' ? '$'}}{{ property.property_name }}{% if property.property_value %} = {{class.print_var(property.property_value)}}{% endif %};
+        {% endfor %}
 
-      {% endfor %}
+        {% endif %}{% if methods %}
+        {% for method in methods %}
 
-    }
+          {% if method.method_abstract %}abstract {% endif %}{% if method.method_scope %}{{method.method_scope}} {% endif %}{% if method.method_final %}final {% endif %}{% if method.method_static %}static {% endif %}function {{method.method_name}}({% for parameter in method.method_parameters %}{% if parameter.param_type %}{{parameter.param_type}} {% endif %}${{parameter.param_name}}{% if parameter.param_value %} = {{parameter.param_value}}{% endif %}{% if not loop.last %}, {% endif %}{% endfor %}){% if method.method_type %} :{{method.method_type}}{% endif %}{% if method.method_abstract %};{% else %}
+
+          {
+              {%spaceless%}{{method.method_body | evaluate}}{%endspaceless%}
+
+          }
+        {% endif %}
+        {% endfor %}
+
+        {% endif %}{% spaceless %}
+      }{% endspaceless %}
