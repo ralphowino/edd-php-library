@@ -1,0 +1,7 @@
+{
+  "name": "PHP",
+  "slug": "php",
+  "dependencies": {
+    "ralphowino/edd-base-library": "master"
+  }
+}
